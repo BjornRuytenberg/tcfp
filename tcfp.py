@@ -16,6 +16,12 @@
 import sys
 import logging
 import os
+import argparse
+
+VERSION = "Thunderbolt 3 Host Controller Firmware Patcher 1.0\n" \
+          "(c) 2020 Björn Ruytenberg\n" \
+          "https://thunderspy.io\n\n" \
+          "Licensed under GNU GPLv3 or later <http://gnu.org/licenses/gpl.html>."
 
 VALID_FILESIZE = 1048576
 MAX_VALID_DROM_ENTRIES_LEN = 200
@@ -396,42 +402,58 @@ def printHelp():
           "help\t\t\tShow this help message.")
 
 
-def printVersion():
-    print(
-        "Thunderbolt 3 Host Controller Firmware Patcher 1.0{0}(c) 2020 Björn Ruytenberg{0}https://thunderspy.io{0}{0}Licensed under GNU GPLv3 or later <http://gnu.org/licenses/gpl.html>.".format(os.linesep))
+def get_args_parser():
+    # create the top-level parser
+    parser = argparse.ArgumentParser(
+        description="Thunderbolt 3 Host Controller Firmware Patcher",
+        epilog="(c) 2020 Björn Ruytenberg <bjorn@bjornweb.nl>. Licensed under GPLv3."
+    )
+    parser.add_argument("-v", "--version", action="store_true", default=False,
+                        help="Show program's version number and exit.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    # create the parser for the "parse" command
+    parser_parse = subparsers.add_parser("parse",
+                                         help="Parse firmware image metadata and Security Level.")
+    parser_parse.add_argument("file", type=str,
+                              help="Path to the firmware image.")
+
+    # create the parser for the "patch" command
+    parser_patch = subparsers.add_parser("patch",
+                                         help="Patch firmware image to override Security Level to SL0 (no security).")
+    parser_patch.add_argument("file", type=str,
+                              help="Patch firmware image to override Security Level to SL0 (no security).")
+
+    return parser
 
 
 def main():
-    # TODO: Migrate to argparse
-    if (len(sys.argv) == 1 or sys.argv[1].startswith("h")):
-        printHelp()
-    elif(sys.argv[1] == "version"):
-        printVersion()
-    elif (sys.argv[1] == "parse" or sys.argv[1] == "patch"):
-        if len(sys.argv) < 3:
-            print("Missing argument 'file'.")
-            return
-        if len(sys.argv) > 3:
-            print("Unrecognized additional arguments given.")
-            return
+    parser = get_args_parser()
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+
+    elif args.version:
+        print(VERSION)
+
+    elif args.command == "parse" or args.command == "patch":
         try:
             image = Image(str(sys.argv[2]))
             for parm in image.imageParms:
                 print(parm, ":", image.imageParms[parm])
             print("")
 
-            if sys.argv[1].startswith("patch") == True:
+            if args.command == "patch":
                 Patcher.PatchImage(image, 0)
                 print("Image patched succesfully.")
 
         except Exception as e:
             print("Error while processing firmware image: ", e)
-    elif len(sys.argv) >= 2:
-        print("Unknown argument(s) given.")
 
 
 if __name__ == '__main__':
-    if (sys.version_info <= (3, 0)):
+    if sys.version_info <= (3, 0):
         print("This script requires Python 3.x. Aborting.")
     else:
         logging.basicConfig(level=logging.DEBUG,
