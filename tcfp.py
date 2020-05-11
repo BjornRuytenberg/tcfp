@@ -393,15 +393,6 @@ def swap(x, len):
     return int.from_bytes(x, byteorder='little', signed=False)
 
 
-def printHelp():
-    print("Thunderbolt 3 Host Controller Firmware Patcher", os.linesep, os.linesep,
-          "Usage:", os.linesep, os.linesep,
-          "parse [file]\t\tParse firmware image metadata and Security Level.", os.linesep,
-          "patch [file]\t\tPatch firmware image to override Security Level to SL0 (no security).", os.linesep,
-          "version\t\tShow program's version number and exit.", os.linesep,
-          "help\t\t\tShow this help message.")
-
-
 def get_args_parser():
     # create the top-level parser
     parser = argparse.ArgumentParser(
