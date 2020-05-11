@@ -413,7 +413,7 @@ def get_args_parser():
     parser_patch = subparsers.add_parser("patch",
                                          help="Patch firmware image to override Security Level to SL0 (no security).")
     parser_patch.add_argument("file", type=str,
-                              help="Patch firmware image to override Security Level to SL0 (no security).")
+                              help="Path to the firmware image.")
 
     return parser
 
