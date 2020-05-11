@@ -12,8 +12,8 @@ Thunderbolt Controller Firmware Patcher requires Python 3.4 or later.
 	
 	 parse [file]		Parse firmware image metadata and Security Level.
 	 patch [file]		Patch firmware image to override Security Level to SL0 (no security).
-	 version			Show program's version number and exit.
-	 help				Show this help message.
+	 version		Show program's version number and exit.
+	 help			Show this help message.
 	 
 ## Disclaimer
 This code has been exclusively released for research purposes and is not intended for unlawful actions.
