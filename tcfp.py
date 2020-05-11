@@ -149,7 +149,7 @@ class Image:
     SecurityLevel = -1
     MatchingSlSig = None
 
-    def _getSigsByPciIdAndSl(self, pciId, sl):
+    def _get_sigs_by_pci_id_and_sl(self, pciId, sl):
         potentiallyMatchingSigs = []
 
         for sig in slSigs:
@@ -161,19 +161,19 @@ class Image:
                 potentiallyMatchingSigs.append(sig)
         return potentiallyMatchingSigs
 
-    def _getDeviceNameByPciId(self, id):
+    def _get_device_name_by_pci_id(self, id):
         for device in pciIds:
             if id in device:
                 return device[id]
         return "N/A"
 
-    def _getOffsetByParm(self, parm):
+    def _get_offset_by_parm(self, parm):
         for offset in offsets:
             if parm in offset:
                 return offset
         assert False, "Firmware parameter not supported: '" + parm + "'"
 
-    def _parseImage(self, f, filename):
+    def _parse_image(self, f, filename):
         # Size sanity check
         size = os.path.getsize(filename)
         if size < VALID_FILESIZE:
@@ -184,11 +184,11 @@ class Image:
                             " bytes. Controller may be unsupported.")
 
         # PCI metadata
-        pos = self._getOffsetByParm("pci-id")
+        pos = self._get_offset_by_parm("pci-id")
         f.seek(pos["pci-id"])
         self.PciId = swap(f.read(pos["len"]), pos["len"])
 
-        self.PciDevName = self._getDeviceNameByPciId(self.PciId)
+        self.PciDevName = self._get_device_name_by_pci_id(self.PciId)
         if self.PciDevName != "N/A":
             self.SupportedPciId = True
         else:
@@ -196,7 +196,7 @@ class Image:
                             str(hex(self.PciId)) + "'. Patching not supported.")
 
         # Find DROM entries
-        pos = self._getOffsetByParm("entries-len")
+        pos = self._get_offset_by_parm("entries-len")
         f.seek(pos["entries-len"])
         entriesLen = swap(f.read(pos["len"]), pos["len"])
 
@@ -206,13 +206,13 @@ class Image:
                 entriesLen) + "). Capping to " + str(MAX_VALID_DROM_ENTRIES_LEN) + ".")
             entriesLen = MAX_VALID_DROM_ENTRIES_LEN
 
-        pos = self._getOffsetByParm("vendor-id")
+        pos = self._get_offset_by_parm("vendor-id")
         f.seek(pos["vendor-id"])
         self.VendorId = swap(f.read(pos["len"]), pos["len"])
-        pos = self._getOffsetByParm("model-id")
+        pos = self._get_offset_by_parm("model-id")
         f.seek(pos["model-id"])
         self.ModelId = swap(f.read(pos["len"]), pos["len"])
-        pos = self._getOffsetByParm("nvm-rev")
+        pos = self._get_offset_by_parm("nvm-rev")
         f.seek(pos["nvm-rev"])
         self.NvmRev = swap(f.read(pos["len"]), pos["len"])
 
@@ -259,7 +259,7 @@ class Image:
 
         self.ValidImage = True
 
-    def _parseSecurityLevel(self, f):
+    def _parse_security_level(self, f):
         if self.SupportedPciId == False:
             logging.warning("Cannot parse SL: PCI ID unsupported.")
             return -1
@@ -268,7 +268,7 @@ class Image:
             # Try all SL patterns for our PCI ID
             potentiallyMatchingSigs = []
             for i in range(SL_MAX_NUM):
-                potentiallyMatchingSigs = self._getSigsByPciIdAndSl(
+                potentiallyMatchingSigs = self._get_sigs_by_pci_id_and_sl(
                     self.PciId, i)
 
                 for sig in potentiallyMatchingSigs:
@@ -297,7 +297,7 @@ class Image:
             # Try matching against signatures for other devices.
             for i in range(SL_MAX_NUM):
                 # pci-id == 0 -> ignore PCI ID
-                potentiallyMatchingSigs = self._getSigsByPciIdAndSl(
+                potentiallyMatchingSigs = self._get_sigs_by_pci_id_and_sl(
                     self.PciId, 0)
 
                 for sig in potentiallyMatchingSigs:
@@ -327,10 +327,10 @@ class Image:
 
         try:
             f = open(self.FileName, 'rb')
-            self._parseImage(f, self.FileName)
+            self._parse_image(f, self.FileName)
 
             if self.ValidImage == True:
-                self.SecurityLevel = self._parseSecurityLevel(f)
+                self.SecurityLevel = self._parse_security_level(f)
                 if self.SecurityLevel == -1:
                     securityLevelStr = "N/A"
                 else:
@@ -356,7 +356,7 @@ class Image:
 
 class Patcher:
     @staticmethod
-    def PatchImage(image, targetSl):
+    def patch_image(image, targetSl):
         assert targetSl == 0, "Only SL0 is currently supported."
         assert image.ValidImage == True, "Not a valid firmware image, and this should have been caught in image.ParseImage."
 
@@ -436,7 +436,7 @@ def main():
             print("")
 
             if args.command == "patch":
-                Patcher.PatchImage(image, 0)
+                Patcher.patch_image(image, 0)
                 print("Image patched succesfully.")
 
         except Exception as e:
