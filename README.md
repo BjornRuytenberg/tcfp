@@ -1,5 +1,5 @@
 # Thunderbolt Controller Firmware Patcher
-Thunderbolt Controller Firmware Patcher, or tcfp, is a proof of concept that is used as part of the Thunderspy attacks as detailed at [thunderspy.io](https://thunderspy.io). This readme is a work in progress.
+Thunderbolt Controller Firmware Patcher, or tcfp, is a proof of concept that is used as part of the Thunderspy attacks as detailed at [thunderspy.io](https://thunderspy.io).
 
 ## Requirements
 Thunderbolt Controller Firmware Patcher requires Python 3.4 or later.
