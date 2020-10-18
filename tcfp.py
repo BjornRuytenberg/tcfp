@@ -152,7 +152,7 @@ class Image:
             if (sig["pci-id"] == pciId) and (sig["sl"] == sl):
                 potentiallyMatchingSigs.append(sig)
             # pci-id == 0 => Ignore PCI ID, try matching against all patterns for given SL
-            elif (sig["pci-id"] == 0) and (sig["sl"] == sl):
+            elif (pciId == 0 and sig["sl"] == sl):
                 potentiallyMatchingSigs.append(sig)
         return potentiallyMatchingSigs
 
@@ -293,7 +293,7 @@ class Image:
             for i in range(SL_MAX_NUM):
                 # pci-id == 0 -> ignore PCI ID
                 potentiallyMatchingSigs = self._getSigsByPciIdAndSl(
-                    self.PciId, 0)
+                    0, i)
 
                 for sig in potentiallyMatchingSigs:
                     # All patterns for current signature must match
