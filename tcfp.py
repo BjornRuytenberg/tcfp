@@ -17,10 +17,11 @@ import sys
 import logging
 import os
 
-VALID_FILESIZE = 229376
+MIN_VALID_FILESIZE = 229376            # AR2015
+MAX_VALID_FILESIZE = 1048576           # AR2016 and TR2018
 MAX_VALID_DROM_ENTRIES_LEN = 200
 DROM_BASE = 0x4210
-DROM_ENTRIES_BASE = DROM_BASE + 21  # 0x4225
+DROM_ENTRIES_BASE = DROM_BASE + 21     # 0x4225
 SL_MAX_NUM = 4
 
 pciIds = [
@@ -170,11 +171,11 @@ class Image:
     def _parseImage(self, f, filename):
         # Size sanity check
         size = os.path.getsize(filename)
-        if size < VALID_FILESIZE:
-            raise Exception("File size smaller than " + str(VALID_FILESIZE) +
+        if size < MIN_VALID_FILESIZE:
+            raise Exception("File size smaller than " + str(MIN_VALID_FILESIZE) +
                             " bytes. Image probably corrupted. Aborting.")
-        elif size > VALID_FILESIZE:
-            logging.warning("File size exceeds " + str(VALID_FILESIZE) +
+        elif size > MAX_VALID_FILESIZE:
+            logging.warning("File size exceeds " + str(MAX_VALID_FILESIZE) +
                             " bytes. Controller may be unsupported.")
 
         # PCI metadata
