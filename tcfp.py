@@ -26,7 +26,7 @@ SL_MAX_NUM = 4
 
 pciIds = [
     # Source: https://pci-ids.ucw.cz/
-    {0x1576: "DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 4C 2015]"},
+    {0x1576: "DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 2C 2015]"},
     {0x1578: "DSL6540 Thunderbolt 3 Bridge [Alpine Ridge 4C 2015]"},
     {0x15c0: "JHL6240 Thunderbolt 3 Bridge (Low Power) [Alpine Ridge LP 2016]"},
     {0x15da: "JHL6340 Thunderbolt 3 Bridge (C step) [Alpine Ridge 2C 2016]"},
