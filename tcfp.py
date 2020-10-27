@@ -401,6 +401,8 @@ class Patcher:
         assert image.ValidImage == True, "Not a valid firmware image, and this should have been "\
             "caught in image.ParseImage."
 
+        if image.SecurityLevel == 0:
+            raise Exception("Current SL is already 0. No need to patch.")
         if image.SecurityLevel == -1 and image.SupportedPciId == False:
             raise Exception(
                 "PCI ID unsupported and unable to parse current SL. Aborting.")
@@ -417,8 +419,6 @@ class Patcher:
                 raise Exception(
                     "PCI ID unsupported, but current SL detected through heuristics. No patch "\
                         "pattern available for this SL signature. Aborting.")
-        if image.SecurityLevel == 0:
-            raise Exception("Current SL is already 0. No need to patch.")
         if image.SecurityLevel != -1 and image.SupportedPciId == True \
             and len(image.MatchingSlSig["patch"]) == 0:
             raise Exception(
