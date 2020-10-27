@@ -17,6 +17,8 @@ import sys
 import logging
 import os
 
+TCFP_VERSION = "1.0"
+
 MIN_VALID_FILESIZE = 229376            # AR2015
 MAX_VALID_FILESIZE = 1048576           # AR2016 and TR2018
 MAX_VALID_DROM_ENTRIES_LEN = 200
@@ -389,7 +391,8 @@ def swap(x, len):
 
 
 def printHelp():
-    print("Thunderbolt 3 Host Controller Firmware Patcher", os.linesep, os.linesep,
+    print("Thunderbolt 3 Host Controller Firmware Patcher", os.linesep,
+          "(c) 2020 Björn Ruytenberg <bjorn@bjornweb.nl>. Licensed under GPLv3.", os.linesep, os.linesep,
           "Usage:", os.linesep, os.linesep,
           "parse [file]\t\tParse firmware image metadata and Security Level.", os.linesep,
           "patch [file]\t\tPatch firmware image to override Security Level to SL0 (no security).", os.linesep,
@@ -399,7 +402,7 @@ def printHelp():
 
 def printVersion():
     print(
-        "Thunderbolt 3 Host Controller Firmware Patcher 1.0{0}(c) 2020 Björn Ruytenberg{0}https://thunderspy.io{0}{0}Licensed under GNU GPLv3 or later <http://gnu.org/licenses/gpl.html>.".format(os.linesep))
+        "Thunderbolt 3 Host Controller Firmware Patcher {1}{0}(c) 2020 Björn Ruytenberg{0}https://thunderspy.io{0}{0}Licensed under GNU GPLv3 or later <http://gnu.org/licenses/gpl.html>.".format(os.linesep, TCFP_VERSION))
 
 
 def main():
