@@ -7,13 +7,14 @@ Thunderbolt Controller Firmware Patcher requires Python 3.4 or later.
 ## Usage
 	 Thunderbolt 3 Host Controller Firmware Patcher
 	 (c) 2020 Björn Ruytenberg <bjorn@bjornweb.nl>. Licensed under GPLv3.
-	
-	 Usage:
-	
-	 parse [file]		Parse firmware image metadata and Security Level.
-	 patch [file]		Patch firmware image to override Security Level to SL0 (no security).
-	 version		Show program's version number and exit.
-	 help			Show this help message.
+	 
+	 Usage: tcfp.py [verb] [FILE] [-v]
+	 
+	 parse		Parse firmware image metadata and Security Level.
+	 patch		Patch firmware image to override Security Level to SL0 (no security).
+	 version	Show program's version number and exit.
+	 help		Show this help message.
+	 -v		Enable verbose output.
 	 
 ## Disclaimer
 This code has been exclusively released for research purposes and is not intended for unlawful actions.

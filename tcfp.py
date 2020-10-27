@@ -299,6 +299,31 @@ class Image:
 
         self.ValidImage = True
 
+    def _debugPrintMatch(self, matchingSlSig:list, isHeuristics:bool):
+        if logging.root.level != logging.DEBUG:
+            return
+
+        logging.debug("Signature match:") if not isHeuristics else logging.debug("Heuristics match:")
+
+        for key in matchingSlSig:
+            value = matchingSlSig[key]
+            if isinstance(value, int) and key == "pci-id":
+                value = hex(value)
+            elif isinstance(value, list) and (key == "sig" or key == "patch"):
+                # No patch for this match
+                if key == "patch" and matchingSlSig[key] is None:
+                    value = "None"
+                    break
+
+                value = "["
+                for offsval in matchingSlSig[key]:
+                    value += "{'offset': " + hex(offsval["offset"]) + ", 'value': " + str(offsval["value"]) + "}, "
+                value = value[:-2]
+                value += "]"
+            else:
+                value = str(matchingSlSig[key])
+            logging.debug("%s : %s", str(key), value)
+
     def _parseSecurityLevel(self, f):
         if self.SupportedPciId == False:
             logging.warning("Cannot parse SL: PCI ID unsupported.")
@@ -324,6 +349,7 @@ class Image:
 
                     if allPatternsMatch == True:
                         self.MatchingSlSig = sig
+                        self._debugPrintMatch(self.MatchingSlSig, False)
                         return i
 
             if len(potentiallyMatchingSigs) == 0:
@@ -354,6 +380,8 @@ class Image:
                     if allPatternsMatch == True:
                         self.MatchingSlSig = sig
                         self.SupportedPciId = False
+                        self._debugPrintMatch(self.MatchingSlSig, True)
+
                         return i
 
             logging.warning("No matching SL patterns found.")
@@ -439,26 +467,38 @@ def swap(x, len):
 
 
 def printHelp():
-    print("Thunderbolt 3 Host Controller Firmware Patcher", os.linesep,
-          "(c) 2020 Björn Ruytenberg <bjorn@bjornweb.nl>. Licensed under GPLv3.", os.linesep, \
-              os.linesep,
-          "Usage:", os.linesep, os.linesep,
-          "parse [file]\t\tParse firmware image metadata and Security Level.", os.linesep,
-          "patch [file]\t\tPatch firmware image to override Security Level to SL0 (no security).", \
-              os.linesep,
-          "version\t\tShow program's version number and exit.", os.linesep,
-          "help\t\t\tShow this help message.")
+    print("Thunderbolt 3 Host Controller Firmware Patcher", os.linesep,\
+        "(c) 2020 Björn Ruytenberg <bjorn@bjornweb.nl>. Licensed under GPLv3.", os.linesep,\
+        os.linesep,\
+        "Usage: tcfp.py [verb] [FILE] [-v]", os.linesep, os.linesep,\
+        "parse\t\tParse firmware image metadata and Security Level.", os.linesep,\
+        "patch\t\tPatch firmware image to override Security Level to SL0 (no security).",\
+        os.linesep,\
+        "version\tShow program's version number and exit.", os.linesep,\
+        "help\t\tShow this help message.", os.linesep,\
+        "-v\t\tEnable verbose output.", os.linesep
+        )
 
 
 def printVersion():
     print(
         "Thunderbolt 3 Host Controller Firmware Patcher {1}{0}(c) 2020 Björn Ruytenberg{0}"\
-            "https://thunderspy.io{0}{0}Licensed under GNU GPLv3 or later"\
+            "https://thunderspy.io{0}{0}Licensed under GNU GPLv3 or later "\
             "<http://gnu.org/licenses/gpl.html>.".format(os.linesep, TCFP_VERSION))
 
 
 def main():
     # TODO: Migrate to argparse
+    _verbose = False
+
+    if (len(sys.argv) > 3 and sys.argv[3] == "-v"):
+        _verbose = True
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
+    else:
+        logging.basicConfig(level=logging.WARNING,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
+
     if (len(sys.argv) == 1 or sys.argv[1].startswith("h")):
         printHelp()
     elif(sys.argv[1] == "version"):
@@ -467,7 +507,7 @@ def main():
         if len(sys.argv) < 3:
             print("Missing argument 'file'.")
             return
-        if len(sys.argv) > 3:
+        if len(sys.argv) > 3 and not _verbose:
             print("Unrecognized additional arguments given.")
             return
         try:
@@ -482,14 +522,10 @@ def main():
 
         except Exception as e: # pylint: disable=broad-except
             print("Error while processing firmware image: ", e)
-    elif len(sys.argv) >= 2:
+    elif len(sys.argv) >= 2 and not _verbose:
         print("Unknown argument(s) given.")
-
 
 if __name__ == '__main__':
     if (sys.version_info <= (3, 0)):
         print("This script requires Python 3.x. Aborting.")
-    else:
-        logging.basicConfig(level=logging.DEBUG,
-                            format=' %(asctime)s - %(levelname)s - %(message)s')
-        main()
+    main()
