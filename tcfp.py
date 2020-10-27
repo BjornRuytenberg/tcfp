@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 """
 Thunderbolt 3 Host Controller Firmware Patcher (tcfp)
@@ -526,6 +526,8 @@ def main():
         print("Unknown argument(s) given.")
 
 if __name__ == '__main__':
-    if (sys.version_info <= (3, 0)):
-        print("This script requires Python 3.x. Aborting.")
-    main()
+    if (sys.version_info < (3, 4)):
+        print("This script requires Python 3.4 or later. Aborting.")
+    else:
+        main()
+        
