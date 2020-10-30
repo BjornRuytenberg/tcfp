@@ -127,7 +127,7 @@ slSigs = [
     {'pci-id': 0x15d3,
      'sl': 1,
      'sig': [{'offset': 0x0, 'value': b'\x00'}, {'offset': 0x800, 'value': b'\x19'}],
-     'patch': []
+     'patch': None
      },
     # NVM 36
     {'pci-id': 0x15ea,
@@ -299,16 +299,16 @@ class Image:
 
         self.ValidImage = True
 
-    def _debugPrintMatch(self, matchingSlSig:list, isHeuristics:bool):
+    def _debugPrintMatch(self, matchingSlSig:list, isHeuristics:bool, idx:int):
         if logging.root.level != logging.DEBUG:
             return
 
-        logging.debug("Signature match:") if not isHeuristics else logging.debug("Heuristics match:")
+        logging.debug("Signature match:") if not isHeuristics else logging.debug("[%i] Heuristics match:", idx)
 
         for key in matchingSlSig:
             value = matchingSlSig[key]
             if isinstance(value, int) and key == "pci-id":
-                value = hex(value)
+                value = self._getDeviceNameByPciId(value) + " (" + hex(value) + ")"
             elif isinstance(value, list) and (key == "sig" or key == "patch"):
                 # No patch for this match
                 if key == "patch" and matchingSlSig[key] is None:
@@ -349,7 +349,7 @@ class Image:
 
                     if allPatternsMatch == True:
                         self.MatchingSlSig = sig
-                        self._debugPrintMatch(self.MatchingSlSig, False)
+                        self._debugPrintMatch(self.MatchingSlSig, False, -1)
                         return i
 
             if len(potentiallyMatchingSigs) == 0:
@@ -361,8 +361,9 @@ class Image:
 
             # We did not recognize the PCI ID, or we do, but failed to match SL against its \
             # known signatures. Try matching against signatures for other devices.
+            rankedMatchingSigs = []
             for i in range(SL_MAX_NUM):
-                # pci-id == 0 -> ignore PCI ID
+                # pci-id == 0 -> ignore PCI ID; get all sigs for current SL
                 potentiallyMatchingSigs = self._getSigsByPciIdAndSl(
                     0, i)
 
@@ -378,17 +379,55 @@ class Image:
                             break
 
                     if allPatternsMatch == True:
-                        self.MatchingSlSig = sig
+                        rankedMatchingSigs = self._rankedInsertMatchingSig(sig, rankedMatchingSigs)
                         self.SupportedPciId = False
-                        self._debugPrintMatch(self.MatchingSlSig, True)
 
-                        return i
+            # Return SL from most probable matching sig
+            if len(rankedMatchingSigs) > 0:
+                self.MatchingSlSig = rankedMatchingSigs[0]
 
+                # Debug only: print ranked matching sigs
+                for i, sig in enumerate(rankedMatchingSigs):
+                    self._debugPrintMatch(sig, True, i)
+                
+                return rankedMatchingSigs[0]["sl"]
+                
+            # Heuristics did not find any matches. Bail out.
             logging.warning("No matching SL patterns found.")
             return -1
         except Exception as e: # pylint: disable=broad-except
             print("Cannot parse Security Level: ", e)
             return -1
+
+    def _rankedInsertMatchingSig(self, newSig, rankedMatchingSigs):
+        # Ensure rankedMatchingSigs[0] always represents the strongest match.
+        # We rank matches as follows:
+        # 1. SL signature: If the new sig has a higher all-matching offset-value count
+        #    than our current top match, we favor the new sig.
+        # 2. Patch pattern presence: If the new sig qualifies for (1), then:
+        #  - If the new and existing top match either both or neither have a patch, then
+        #    we favor the new sig.
+        #  - Else, we favor the new sig if it has a patch pattern.
+        #
+        # TODO: Provide user ability to choose between ranked matches that provide a patch
+
+        # Initial insert
+        if len(rankedMatchingSigs) == 0:
+            rankedMatchingSigs.insert(0, newSig)
+            return rankedMatchingSigs
+
+        # Matching SL signature: compare offset-value count
+        if len(newSig["sig"]) > len(rankedMatchingSigs[0]["sig"]):
+            if (newSig["patch"] == None and rankedMatchingSigs[0]["patch"] == None) or (newSig["patch"] != None and rankedMatchingSigs[0]["patch"] != None): 
+                # Equal scores on both constraints, so rank new match on top.   
+                rankedMatchingSigs.insert(0, newSig)
+            elif newSig["patch"] == None:
+                # Our new most probable match does not have a patch, but still a higher matching
+                # sig count. Rank new one on top.
+                rankedMatchingSigs.insert(0, newSig)
+
+        return rankedMatchingSigs
+
 
     def __init__(self, filename):
         self.FileName = filename
@@ -439,7 +478,7 @@ class Patcher:
                 "PCI ID supported, but unable to parse current SL (different NVM version?). "\
                     "Aborting.")
         if image.SecurityLevel != -1 and image.SupportedPciId == False:
-            if len(image.MatchingSlSig["patch"]) > 0:
+            if image.MatchingSlSig["patch"] != None and len(image.MatchingSlSig["patch"]) > 0:
                 logging.warning(
                     "PCI ID unsupported, but current SL detected through heuristics. Patching may "\
                         "fail.")
@@ -448,7 +487,7 @@ class Patcher:
                     "PCI ID unsupported, but current SL detected through heuristics. No patch "\
                         "pattern available for this SL signature. Aborting.")
         if image.SecurityLevel != -1 and image.SupportedPciId == True \
-            and len(image.MatchingSlSig["patch"]) == 0:
+            and image.MatchingSlSig["patch"] == None:
             raise Exception(
                 "PCI ID supported, but no patch pattern available for this SL signature. Aborting.")
 
