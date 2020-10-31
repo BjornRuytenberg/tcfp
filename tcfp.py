@@ -362,7 +362,7 @@ class Image:
 
                     for pattern in sig["sig"]:
                         f.seek(pattern["offset"])
-                        data = f.read(1)
+                        data = f.read(len(pattern["value"]))
                         if data != pattern["value"]:
                             allPatternsMatch = False
                             break
@@ -393,7 +393,7 @@ class Image:
 
                     for pattern in sig["sig"]:
                         f.seek(pattern["offset"])
-                        data = f.read(1)
+                        data = f.read(len(pattern["value"]))
                         if data != pattern["value"]:
                             allPatternsMatch = False
                             break
