@@ -46,6 +46,30 @@ pciIds = [
 
 slSigs = [
     # Listing all known patterns here, including tested NVM version.
+    # NVM 25
+    {'pci-id': 0x1578,
+     'sl': 0,
+     'sig': [
+        {'offset': 0x0,
+        'value': b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'},
+        {'offset': 0x1800, 'value': b'\x18'}],
+     'patch': None,
+     },
+    {'pci-id': 0x1578,
+     'sl': 1,
+     'sig': [
+        {'offset': 0x0,
+        'value': b'\x00\x40\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00'},
+        {'offset': 0x800, 'value': b'\x19'}],
+     'patch': [
+        {'offset': 0x0,
+        'value': b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'},
+        {'offset': 0x800, 'value': b'\xFF'},
+        {'offset': 0xFFC, 'value': b'\x10\x50\x03\x00'},
+        {'offset': 0x1000,
+        'value': b'\x00\x40\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00'},
+        {'offset': 0x1800, 'value': b'\x18'}],
+     },
     # NVM 33
     {'pci-id': 0x15da,
      'sl': 0,
