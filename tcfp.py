@@ -20,11 +20,13 @@ research purposes and is not intended for unlawful actions.
 import sys
 import logging
 import os
+from enum import Enum
 
 TCFP_VERSION = "1.0"
 
-MIN_VALID_FILESIZE = 229376            # AR2015
-MAX_VALID_FILESIZE = 1048576           # AR2016 and TR2018
+MIN_VALID_FILESIZE_INCR_AR = 229376    # AR2015, AR2016 incremental FW update
+MIN_VALID_FILESIZE_INCR_TR = 430080    # TR2018 incremental FW update
+MAX_VALID_FILESIZE = 1048576           # AR2015, AR2016 and TR2018 full dumps
 MAX_VALID_DROM_ENTRIES_LEN = 200
 DROM_BASE = 0x4210
 DROM_ENTRIES_BASE = DROM_BASE + 21     # 0x4225
@@ -174,6 +176,11 @@ offsets = [
     {'nvm-rev': DROM_BASE+21, 'len': 1},
 ]
 
+class ImageType(Enum):
+    NOT_AVAILABLE = "N/A"
+    INCREMENTAL_UPD = "Incremental"
+    FULL_DUMP = "Full"
+
 
 class Image:
     FileName = None
@@ -188,6 +195,7 @@ class Image:
     NvmRev = 0
     SecurityLevel = -1
     MatchingSlSig = None
+    ImageType = ImageType.NOT_AVAILABLE.value
 
     def _getSigsByPciIdAndSl(self, pciId, sl):
         potentiallyMatchingSigs = []
@@ -216,12 +224,24 @@ class Image:
     def _parseImage(self, f, filename):
         # Size sanity check
         size = os.path.getsize(filename)
-        if size < MIN_VALID_FILESIZE:
-            raise Exception("File size smaller than " + str(MIN_VALID_FILESIZE) +
+        if size < MIN_VALID_FILESIZE_INCR_AR:
+            self.ImageType = ImageType.NOT_AVAILABLE.value
+            raise Exception("File size smaller than " + str(MIN_VALID_FILESIZE_INCR_AR) +
                             " bytes. Image probably corrupted. Aborting.")
+        elif size > MIN_VALID_FILESIZE_INCR_AR and size <= MIN_VALID_FILESIZE_INCR_TR:
+            self.ImageType = ImageType.INCREMENTAL_UPD.value
+            logging.warning("File size in between %s and %s bytes. Possible causes: %s"\
+                " - Image comprises not a full dump, but an incremental firmware update. Please "\
+                "note SL state parsing and patching might not be available.%s"\
+                " - Image dump may be incomplete, i.e. not include 'scratch pad' section. However,"\
+                " this should typically not cause any issues.", str(MIN_VALID_FILESIZE_INCR_AR),\
+                    str(MAX_VALID_FILESIZE), os.linesep, os.linesep)
         elif size > MAX_VALID_FILESIZE:
+            self.ImageType = ImageType.NOT_AVAILABLE.value
             logging.warning("File size exceeds %s bytes. Controller may be unsupported.",\
                  str(MAX_VALID_FILESIZE))
+        else:
+            self.ImageType = ImageType.FULL_DUMP.value
 
         # PCI metadata
         pos = self._getOffsetByParm("pci-id")
@@ -302,7 +322,7 @@ class Image:
     def _debugPrintMatch(self, matchingSlSig:list, isHeuristics:bool, idx:int):
         if logging.root.level != logging.DEBUG:
             return
-
+            
         logging.debug("Signature match:") if not isHeuristics else logging.debug("[%i] Heuristics match:", idx)
 
         for key in matchingSlSig:
@@ -451,6 +471,7 @@ class Image:
                     "NVM version": str(self.NvmRev) + " (" + hex(self.NvmRev) + ")",
                     "Vendor": self.VendorStr.decode("utf-8"),
                     "Device": self.DeviceStr.decode("utf-8"),
+                    "Image type": self.ImageType,
                     "Security Level": securityLevelStr
                 }
 
