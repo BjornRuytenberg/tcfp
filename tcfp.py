@@ -31,6 +31,7 @@ MAX_VALID_DROM_ENTRIES_LEN = 200
 DROM_BASE = 0x4210
 DROM_ENTRIES_BASE = DROM_BASE + 21     # 0x4225
 SL_MAX_NUM = 4
+JUMP_ADDR_LEN = 3
 
 pciIds = [
     # Source: https://pci-ids.ucw.cz/
@@ -169,6 +170,8 @@ slSigs = [
 offsets = [
     # Generic
     {'pci-id': 0x4005, 'len': 2},
+    {'default-jump-addr': 0x1000, 'len': 2},
+    {'nvm-rev-offs-jump-addr': 0xA, 'len': 1},
     # DROM
     {'entries-len': DROM_BASE+14, 'len': 2},
     {'vendor-id': DROM_BASE+16, 'len': 2},
@@ -196,6 +199,29 @@ class Image:
     SecurityLevel = -1
     MatchingSlSig = None
     ImageType = ImageType.NOT_AVAILABLE.value
+
+    def _getNvmVersionAlternate(self, f):
+        # Get jump address
+        f.seek(0)
+        pos = f.read(JUMP_ADDR_LEN)
+
+        if(pos == b'\xFF\xFF\xFF'):
+            # None specified in header, so jump to default jump address
+            # TODO: clean up offsets data structure
+            f.seek(self._getOffsetByParm("default-jump-addr")["default-jump-addr"])
+            pos = swap(f.read(JUMP_ADDR_LEN), JUMP_ADDR_LEN)
+        else:
+            # Specified in header, so get the address
+            f.seek(0)
+            pos = swap(f.read(JUMP_ADDR_LEN), JUMP_ADDR_LEN)
+
+        f.seek(pos + self._getOffsetByParm("nvm-rev-offs-jump-addr")["nvm-rev-offs-jump-addr"])
+        try:
+            value = hex(int.from_bytes(f.read(1), byteorder='big'))
+            return int(value[2:])
+        except Exception as e:
+            logging.warning("Image declares unlikely NVM version")
+            return 1
 
     def _getSigsByPciIdAndSl(self, pciId, sl):
         potentiallyMatchingSigs = []
@@ -275,6 +301,13 @@ class Image:
         pos = self._getOffsetByParm("nvm-rev")
         f.seek(pos["nvm-rev"])
         self.NvmRev = swap(f.read(pos["len"]), pos["len"])
+
+        # If NvmRev==1, then this is likely a bogus value. Happens with some DROMs (cough, Intel).
+        # Use the alternative route to get NvmRev.
+        if(self.NvmRev == 1):
+            logging.debug("DROM declares bogus NVM version. Determining value using alternative "\
+                "method.")
+            self.NvmRev = self._getNvmVersionAlternate(f)
 
         # Find vendor and device string offsets
         # Move to DROM entries base
@@ -590,4 +623,3 @@ if __name__ == '__main__':
         print("This script requires Python 3.4 or later. Aborting.")
     else:
         main()
-        
