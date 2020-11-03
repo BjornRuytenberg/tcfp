@@ -42,7 +42,8 @@ pciIds = [
     {0x15d3: "JHL6540 Thunderbolt 3 Bridge (C step) [Alpine Ridge 4C 2016]"},
     {0x15e7: "JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]"},
     {0x15ea: "JHL7540 Thunderbolt 3 Bridge [Titan Ridge 4C 2018]"},
-    {0x15ef: "JHL7540 Thunderbolt 3 Bridge [Titan Ridge DD 2018]"}
+    {0x15ef: "JHL7540 Thunderbolt 3 Bridge [Titan Ridge DD 2018]"},
+    {0x15ee: "Ice Lake Thunderbolt 3 Bridge [Ice Lake 4C 2019]"}
 ]
 
 slSigs = [
@@ -275,7 +276,11 @@ class Image:
         self.PciId = swap(f.read(pos["len"]), pos["len"])
 
         self.PciDevName = self._getDeviceNameByPciId(self.PciId)
-        if self.PciDevName != "N/A":
+        if "Ice Lake" in self.PciDevName:
+            logging.warning("Detected Ice Lake firmware image (PCI ID: '%s').",\
+                str(hex(self.PciId)))
+            raise Exception("Ice Lake images are currently unsupported. Aborting.")
+        elif self.PciDevName != "N/A":
             self.SupportedPciId = True
         else:
             logging.warning("Unrecognized PCI ID: '%s'. Patching not supported.",\
