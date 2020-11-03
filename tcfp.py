@@ -258,8 +258,8 @@ class Image:
         elif size > MIN_VALID_FILESIZE_INCR_AR and size <= MIN_VALID_FILESIZE_INCR_TR:
             self.ImageType = ImageType.INCREMENTAL_UPD.value
             logging.warning("File size in between %s and %s bytes. Possible causes: %s"\
-                " - Image comprises not a full dump, but an incremental firmware update. Please "\
-                "note SL state parsing and patching might not be available.%s"\
+                " - Image may be an incremental firmware update. While tcfp may be able to parse "\
+                "the SL state, please note patching requires a full dump. %s"\
                 " - Image dump may be incomplete, i.e. not include 'scratch pad' section. However,"\
                 " this should typically not cause any issues.", str(MIN_VALID_FILESIZE_INCR_AR),\
                     str(MAX_VALID_FILESIZE), os.linesep, os.linesep)
@@ -549,6 +549,11 @@ class Patcher:
             and image.MatchingSlSig["patch"] == None:
             raise Exception(
                 "PCI ID supported, but no patch pattern available for this SL signature. Aborting.")
+
+        if image.ImageType == ImageType.INCREMENTAL_UPD.value:
+            logging.warning(
+                "Image is likely an incremental firmware update. Patching may fail."
+            )
 
         try:
             f = open(image.FileName, 'r+b')
