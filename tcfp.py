@@ -276,6 +276,8 @@ class Image:
         self.PciId = swap(f.read(pos["len"]), pos["len"])
 
         self.PciDevName = self._getDeviceNameByPciId(self.PciId)
+        logging.debug("Found PCI ID: %s ('%s')", str(hex(self.PciId)), self.PciDevName)
+
         if "Ice Lake" in self.PciDevName:
             logging.warning("Detected Ice Lake firmware image (PCI ID: '%s').",\
                 str(hex(self.PciId)))
@@ -287,6 +289,7 @@ class Image:
                 str(hex(self.PciId)))
 
         # Find DROM entries
+        logging.debug("Parsing DROM.")
         pos = self._getOffsetByParm("entries-len")
         f.seek(pos["entries-len"])
         entriesLen = swap(f.read(pos["len"]), pos["len"])
@@ -313,6 +316,7 @@ class Image:
             logging.debug("DROM declares bogus NVM version. Determining value using alternative "\
                 "method.")
             self.NvmRev = self._getNvmVersionAlternate(f)
+            logging.debug("Got NVM version using alternative method: %s (%s)", str(self.NvmRev), hex(self.NvmRev))
 
         # Find vendor and device string offsets
         # Move to DROM entries base
@@ -338,6 +342,7 @@ class Image:
                 validEntriesSection = False
                 break
 
+        logging.debug("Done parsing DROM.")
         if validEntriesSection == True:
             # Vendor string
             # Skip header bytes (entry type, entry length, entry index)
