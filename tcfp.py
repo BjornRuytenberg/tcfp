@@ -324,7 +324,7 @@ class Image:
 
         # Iterate over DROM entries until we encounter entry type generic and entry index 1
         validEntriesSection = True
-        while not((entryType == 0xCB or entryType == 0xCC or entryType == 0)
+        while not((entryType == 0xC5 or entryType == 0xCB or entryType == 0xCC or entryType == 0)
                   and not(pos > DROM_ENTRIES_BASE + entriesLen) and entryIdx == 1):
             pos += entryLen
             f.seek(pos)
